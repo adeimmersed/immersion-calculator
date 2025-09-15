@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
 import { Question as QuestionType } from '../data/questions';
 import { UserResponses } from '../utils/calculator';
+import { replaceTargetLanguagePlaceholder } from '../utils/languageUtils';
+import SimpleLanguageSelector from './SimpleLanguageSelector';
+import CommunicationPreferenceWithEmail from './CommunicationPreferenceWithEmail';
 
 interface CalculatorQuestionProps {
   question: QuestionType;
@@ -15,6 +18,7 @@ interface CalculatorQuestionProps {
   onClear: () => void;
   canProceed: boolean;
   selectedLanguage?: string;
+  customLanguage?: string;
 }
 
 export const CalculatorQuestion: React.FC<CalculatorQuestionProps> = ({
@@ -27,9 +31,28 @@ export const CalculatorQuestion: React.FC<CalculatorQuestionProps> = ({
   onBack,
   onClear,
   canProceed,
-  selectedLanguage
+  selectedLanguage,
+  customLanguage
 }) => {
   const currentResponse = responses[question.id];
+
+  // Special handling for communication-preference question with email
+  if (question.id === 'communication-preference') {
+    return (
+      <CommunicationPreferenceWithEmail
+        question={question}
+        questionNumber={questionNumber}
+        totalQuestions={totalQuestions}
+        responses={responses}
+        onResponse={onResponse}
+        onNext={onNext}
+        onBack={onBack}
+        canProceed={canProceed}
+        selectedLanguage={selectedLanguage}
+        customLanguage={customLanguage}
+      />
+    );
+  }
   
   const handleSingleChoice = (optionValue: string) => {
     onResponse(question.id, optionValue);
@@ -43,10 +66,7 @@ export const CalculatorQuestion: React.FC<CalculatorQuestionProps> = ({
     onResponse(question.id, newSelections);
   };
 
-  const displayTitle = question.title.replace(
-    '[Target Language]', 
-    selectedLanguage || 'your target language'
-  );
+  const displayTitle = replaceTargetLanguagePlaceholder(question.title, selectedLanguage, customLanguage);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-400 via-pink-500 to-rose-500 flex items-center justify-center p-4">
@@ -246,21 +266,20 @@ export const CalculatorQuestion: React.FC<CalculatorQuestionProps> = ({
                     <label className="block text-white text-sm font-semibold mb-2">
                       Select your target language:
                     </label>
-                    <select
+                    <SimpleLanguageSelector
+                      options={question.dropdownOptions || []}
                       value={(currentResponse as any)?.language || ''}
-                      onChange={(e) => {
+                      customLanguage={(currentResponse as any)?.customLanguage}
+                      onChange={(value, customLanguage) => {
                         const current = (currentResponse as any) || {};
-                        onResponse(question.id, { ...current, language: e.target.value });
+                        onResponse(question.id, { 
+                          ...current, 
+                          language: value,
+                          customLanguage: customLanguage || current.customLanguage
+                        });
                       }}
-                      className="w-full p-3 bg-gray-700 border-2 border-gray-600 rounded-lg text-white"
-                    >
-                      <option value="">Choose a language...</option>
-                      {question.dropdownOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.text}
-                        </option>
-                      ))}
-                    </select>
+                      placeholder="Choose a language..."
+                    />
                   </div>
 
                   {/* Timeline Options */}

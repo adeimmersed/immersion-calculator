@@ -464,7 +464,7 @@ export const questions: Question[] = [
       {
         id: 'near-native',
         text: 'I want to sound near-native',
-        description: 'I want Korean friends to be genuinely impressed with my pronunciation',
+        description: 'I want [Target Language] native speaker friends to be genuinely impressed with my pronunciation',
         value: 'near_native'
       },
       {

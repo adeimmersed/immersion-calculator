@@ -1,9 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Question as QuestionType } from '../data/questions';
+import { replaceLanguageSpecificText } from '../utils/languageUtils';
 import OptionCard from './OptionCard';
 import QuestionSlider from './QuestionSlider';
 import DropdownSelect from './DropdownSelect';
+import SimpleLanguageSelector from './SimpleLanguageSelector';
 import TypewriterText from './TypewriterText';
 
 interface QuestionProps {
@@ -41,11 +43,9 @@ export const Question: React.FC<QuestionProps> = ({
     onResponse(question.id, value);
   };
 
-  // Replace [Target Language] placeholder in title
-  const displayTitle = question.title.replace(
-    '[Target Language]', 
-    selectedLanguage || 'your target language'
-  );
+  // Replace [Target Language] placeholder in title with properly capitalized language
+  const customLanguage = (currentResponse as any)?.customLanguage;
+  const displayTitle = replaceLanguageSpecificText(question.title, selectedLanguage, customLanguage);
 
   return (
     <motion.div
@@ -86,12 +86,17 @@ export const Question: React.FC<QuestionProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select your target language:
                 </label>
-                <DropdownSelect
-                  options={question.dropdownOptions}
+                <SimpleLanguageSelector
+                  options={question.dropdownOptions || []}
                   value={(currentResponse as any)?.language || ''}
-                  onChange={(value) => {
+                  customLanguage={(currentResponse as any)?.customLanguage}
+                  onChange={(value, customLanguage) => {
                     const current = (currentResponse as any) || {};
-                    onResponse(question.id, { ...current, language: value });
+                    onResponse(question.id, { 
+                      ...current, 
+                      language: value,
+                      customLanguage: customLanguage || current.customLanguage
+                    });
                   }}
                   placeholder="Choose a language..."
                 />
@@ -125,7 +130,10 @@ export const Question: React.FC<QuestionProps> = ({
               {question.options.map((option, index) => (
                 <OptionCard
                   key={option.id}
-                  option={option}
+                  option={{
+                    ...option,
+                    description: replaceLanguageSpecificText(option.description, selectedLanguage, customLanguage)
+                  }}
                   isSelected={currentResponse === option.value}
                   onClick={() => handleSingleChoice(option.value)}
                   index={index}
@@ -139,7 +147,10 @@ export const Question: React.FC<QuestionProps> = ({
               {question.options.map((option, index) => (
                 <OptionCard
                   key={option.id}
-                  option={option}
+                  option={{
+                    ...option,
+                    description: replaceLanguageSpecificText(option.description, selectedLanguage, customLanguage)
+                  }}
                   isSelected={((currentResponse as string[]) || []).includes(option.value)}
                   isMultiple={true}
                   onClick={() => handleMultipleChoice(option.value)}

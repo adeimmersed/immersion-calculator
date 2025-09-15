@@ -6,7 +6,9 @@ import { CalculatorResults, UserResponses } from '../utils/calculator';
 interface CalculatorResultsProps {
   results: CalculatorResults;
   selectedLanguage: string;
+  customLanguage?: string;
   responses: UserResponses;
+  userName: string;
   onEmailCapture: (email: string) => void;
   onRestart: () => void;
 }
@@ -14,7 +16,9 @@ interface CalculatorResultsProps {
 export const CalculatorResultsComponent: React.FC<CalculatorResultsProps> = ({ 
   results, 
   selectedLanguage, 
+  customLanguage,
   responses,
+  userName,
   onEmailCapture,
   onRestart 
 }) => {
@@ -27,9 +31,91 @@ export const CalculatorResultsComponent: React.FC<CalculatorResultsProps> = ({
     if (!email) return;
     
     setIsSubmitting(true);
-    await onEmailCapture(email);
-    setEmailSubmitted(true);
-    setIsSubmitting(false);
+    try {
+      await onEmailCapture(email);
+      setEmailSubmitted(true);
+    } catch (error) {
+      console.error('Email submission error:', error);
+      // Still mark as submitted to show success message
+      setEmailSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePrint = () => {
+    const printContent = document.querySelector('.assessment-sheet');
+    if (printContent) {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+        <html>
+          <head>
+            <title>Language Immersion Assessment - ${getDisplayLanguage()}</title>
+            <style>
+              body { 
+                font-family: 'Poppins', Arial, sans-serif; 
+                margin: 20px; 
+                line-height: 1.6;
+                color: #333;
+              }
+              .assessment-sheet { 
+                background: white; 
+                padding: 20px; 
+                max-width: 800px;
+                margin: 0 auto;
+              }
+              .no-print { display: none !important; }
+              h1, h2, h3 { color: #1a1a1a; margin-bottom: 16px; }
+              .bg-gradient-to-r { background: #f8f9fa !important; }
+              .border { border: 1px solid #e5e7eb !important; }
+              .rounded-lg { border-radius: 8px !important; }
+              .p-4, .p-6 { padding: 16px !important; }
+              .mb-4, .mb-6, .mb-8 { margin-bottom: 16px !important; }
+              .text-sm { font-size: 14px !important; }
+              .text-xs { font-size: 12px !important; }
+              .font-bold { font-weight: 700 !important; }
+              .font-semibold { font-weight: 600 !important; }
+              .grid { display: block !important; }
+              .grid > div { margin-bottom: 16px !important; }
+              @media print { 
+                .no-print { display: none !important; }
+                body { margin: 0; }
+                .assessment-sheet { box-shadow: none !important; }
+              }
+            </style>
+          </head>
+          <body>
+            ${printContent.innerHTML}
+          </body>
+        </html>
+      `);
+        printWindow.document.close();
+        printWindow.print();
+      }
+    }
+  };
+
+  const handleSave = () => {
+    const data = {
+      results,
+      responses,
+      selectedLanguage,
+      intensityLevel,
+      personalizedInsights,
+      sixMonthProjection,
+      timestamp: new Date().toISOString()
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `immersion-assessment-${selectedLanguage}-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const formatTime = (minutes: number): string => {
@@ -46,7 +132,10 @@ export const CalculatorResultsComponent: React.FC<CalculatorResultsProps> = ({
     }
   };
 
-  const capitalizeLanguage = (lang: string): string => {
+  const getDisplayLanguage = (): string => {
+    if (selectedLanguage === 'other' && customLanguage) {
+      return customLanguage;
+    }
     const languageMap: Record<string, string> = {
       'korean': 'Korean',
       'japanese': 'Japanese',
@@ -59,7 +148,7 @@ export const CalculatorResultsComponent: React.FC<CalculatorResultsProps> = ({
       'arabic': 'Arabic',
       'other': 'Other'
     };
-    return languageMap[lang] || lang.charAt(0).toUpperCase() + lang.slice(1);
+    return languageMap[selectedLanguage] || selectedLanguage.charAt(0).toUpperCase() + selectedLanguage.slice(1);
   };
 
   const calculateIntensityLevel = (): number => {
@@ -195,13 +284,14 @@ export const CalculatorResultsComponent: React.FC<CalculatorResultsProps> = ({
         transition={{ duration: 0.5 }}
         className="w-full max-w-7xl mx-auto"
       >
-        <div className="flex gap-8 items-start">
-          {/* Calculator on the Side */}
+        {/* Mobile-first responsive layout */}
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          {/* Calculator - Hidden on mobile, shown on desktop */}
           <motion.div
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="flex-shrink-0"
+            className="hidden lg:flex flex-shrink-0"
           >
             <div className="retro-calculator" style={{ maxWidth: '400px', minWidth: '350px' }}>
               {/* Calculator Screen */}
@@ -242,8 +332,12 @@ export const CalculatorResultsComponent: React.FC<CalculatorResultsProps> = ({
                 <button onClick={onRestart} className="calculator-button special text-sm col-span-2 py-3">
                   NEW CALC
                 </button>
-                <div className="calculator-button text-sm opacity-50 py-3">SAVE</div>
-                <div className="calculator-button text-sm opacity-50 py-3">PRINT</div>
+                <button onClick={handleSave} className="calculator-button text-sm py-3">
+                  SAVE
+                </button>
+                <button onClick={handlePrint} className="calculator-button text-sm py-3">
+                  PRINT
+                </button>
                 
                 {/* Number pad */}
                 <div className="calculator-button text-sm opacity-50 py-3">7</div>
@@ -265,12 +359,12 @@ export const CalculatorResultsComponent: React.FC<CalculatorResultsProps> = ({
             </div>
           </motion.div>
 
-          {/* Assessment Sheet */}
+          {/* Assessment Sheet - Full width on mobile */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="flex-1 bg-white rounded-lg shadow-2xl"
+            className="flex-1 bg-white rounded-lg shadow-2xl w-full assessment-sheet"
             style={{
               backgroundImage: `linear-gradient(to right, #e0e7ff 1px, transparent 1px)`,
               backgroundSize: '24px 100%',
@@ -286,8 +380,8 @@ export const CalculatorResultsComponent: React.FC<CalculatorResultsProps> = ({
                 </h1>
                 <div className="text-base text-gray-600 flex justify-between items-center">
                   <div>
-                    <span className="font-semibold">Student:</span> Anonymous Learner<br/>
-                    <span className="font-semibold">Language:</span> {capitalizeLanguage(selectedLanguage)}<br/>
+                    <span className="font-semibold">Student:</span> {userName || 'Anonymous Learner'}<br/>
+                    <span className="font-semibold">Language:</span> {getDisplayLanguage()}<br/>
                     <span className="font-semibold">Assessment Date:</span> {new Date().toLocaleDateString()}
                   </div>
                   <div className="text-right">
@@ -592,11 +686,11 @@ export const CalculatorResultsComponent: React.FC<CalculatorResultsProps> = ({
                   <Mail className="w-12 h-12 mx-auto mb-4 text-blue-400" />
                   
                   <h3 className="text-xl font-bold mb-2">
-                    Unlock Your Complete Immersion Roadmap
+                    {userName ? `Hey ${userName},` : 'Hey there,'} unlock your complete immersion roadmap!
                   </h3>
                   
                   <p className="text-gray-300 mb-4 text-sm leading-relaxed">
-                    This assessment is just the beginning. I have so much more to share with you - advanced strategies, 
+                    {userName ? `${userName}, this assessment is just the beginning.` : 'This assessment is just the beginning.'} I have so much more to share with you - advanced strategies, 
                     proven methodologies, and insider techniques that I've developed through years of helping learners 
                     achieve fluency.
                   </p>

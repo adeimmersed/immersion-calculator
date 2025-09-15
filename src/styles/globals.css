@@ -472,3 +472,122 @@ select:focus-visible {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+/* Name input section highlighting */
+.name-input-section {
+  transition: all 0.3s ease;
+}
+
+.name-input-section:focus-within {
+  background-color: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  .retro-calculator {
+    max-width: 100%;
+    margin: 0 auto 2rem;
+    padding: 16px;
+  }
+  
+  .calculator-screen {
+    font-size: 14px;
+    padding: 16px;
+    min-height: 60px;
+  }
+  
+  .calculator-button {
+    padding: 12px;
+    font-size: 14px;
+    min-height: 50px;
+  }
+  
+  .assessment-sheet {
+    margin: 0;
+    padding: 16px;
+  }
+  
+  .assessment-sheet h1 {
+    font-size: 1.5rem;
+  }
+  
+  .assessment-sheet h2 {
+    font-size: 1.25rem;
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .text-3xl {
+    font-size: 1.875rem;
+  }
+  
+  .text-2xl {
+    font-size: 1.5rem;
+  }
+  
+  .text-xl {
+    font-size: 1.25rem;
+  }
+  
+  .px-8 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .py-8 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  
+  .mb-8 {
+    margin-bottom: 1rem;
+  }
+  
+  .ml-12 {
+    margin-left: 1rem;
+  }
+  
+  .w-8 {
+    width: 1rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .retro-calculator {
+    display: none !important;
+  }
+  
+  .assessment-sheet {
+    background: white !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 20px !important;
+  }
+  
+  .bg-gradient-to-br {
+    background: white !important;
+  }
+  
+  .text-white {
+    color: black !important;
+  }
+  
+  .bg-white {
+    background: white !important;
+  }
+}
